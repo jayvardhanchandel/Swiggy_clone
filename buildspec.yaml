@@ -41,16 +41,16 @@ phases:
 
   post_build:
     commands:
-      #- echo "Performing Trivy file scan before building the image..."
-      #- aws ses send-email --from "jayvardhanchandel@gmail.com" --to "jayvardhanchandel@gmail.com" --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" --text "Build status: $CODEBUILD_BUILD_STATUS" --region "ap-south-1"
-     # - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
-      #- echo "Running OWASP Dependency-Check scan..."
-      #- cd dependency-check/bin
-      #- ./dependency-check.sh --scan . --format ALL
-      #- echo "Build completed successfully!"
-      #- echo "Running SonarQube analysis result"
-      #- sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.235.48.16/:9000/
-      #- aws ses send-email --from "jayvardhanchandel@gmail.com" --to "jayvardhanchandel@gmail.com" --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" --text "Build status: $CODEBUILD_BUILD_STATUS" --region "ap-south-1" # Update with your preferred AWS region
+      - echo "Performing Trivy file scan before building the image..."
+      - aws ses send-email --from "jayvardhanchandel@gmail.com" --to "jayvardhanchandel@gmail.com" --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" --text "Build status: $CODEBUILD_BUILD_STATUS" --region "ap-south-1"
+      - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
+      - echo "Running OWASP Dependency-Check scan..."
+      - cd dependency-check/bin
+      - ./dependency-check.sh --scan . --format ALL
+      - echo "Build completed successfully!"
+      - echo "Running SonarQube analysis result"
+      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.235.48.16/:9000/
+      - aws ses send-email --from "jayvardhanchandel@gmail.com" --to "jayvardhanchandel@gmail.com" --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" --text "Build status: $CODEBUILD_BUILD_STATUS" --region "ap-south-1" # Update with your preferred AWS region
 
 artifacts:
   files:
