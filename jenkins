@@ -1,0 +1,80 @@
+pipeline {
+    agent any 
+    tools {
+        jdk 'jdk17'
+        nodejs 'node16'
+    }
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+    stages {
+        stage('clean workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('checkout from Git') {
+            steps {
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/KISHOREKOPPARAPU/swiggy-clone.git'
+            }
+        }
+        stage('Sonarqube analysis') {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                    sh '''
+                    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=swiggy-app \
+                    -Dsonar.sources=. \
+                    -Dsonar.projectKey=swiggy-app \
+                    -Dsonar.host.url=http://100.26.225.158:9000/ \
+                    -Dsonar.login=squ_b6744382a31217bb4f00e402a3894b3bf799a119 '''
+              }
+            }
+        }
+        stage('Install Dependency') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit", odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Trivy FS SCAN') {
+            steps {
+                sh "trivy fs . > trivy.txt"
+            }
+        }
+        stage ('Docker Build & Docker Push') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
+                    sh '''
+                    docker build -t swiggy-app .
+                    docker tag swiggy-app kopparapukishore/swiggy-app:latest
+                    docker push kopparapukishore/swiggy-app:latest
+                    '''
+                }
+                }
+            }
+        }
+        stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit", odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('TRIVY IMAGE') {
+            steps {
+                sh "trivy image kopparapukishore/swiggy-app:latest > TRIVYIMAGE.txt"
+            }
+       }
+       
+        stage ('swiggy-app') {
+            steps {
+                sh 'docker run -d --name swiggy -p 3000:3000 kopparapukishore/swiggy-app:latest'
+            }
+        }
+    }
+}
